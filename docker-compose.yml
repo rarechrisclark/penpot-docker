@@ -6,35 +6,28 @@ networks:
 services:
   frontend:
     image: "penpotapp/frontend:latest"
-    container_name: penpot-frontend
-    networks:
-      - penpot
+    container_name: penpot_frontend
     restart: always
+    networks: [ penpot ]
+    ports:
+      - "9001:80"
     env_file:
       - ./docker/.env
     environment:
       VIRTUAL_HOST: penpot.docker
       NODE_ENV: dev
       PENPOT_FLAGS: disable-secure-session-cookies enable-demo-users enable-registration enable-login-with-password
-    ports:
-      - "9001:80"
     depends_on:
       - backend
       - exporter
     volumes:
-      - penpot_assets:/opt/data/assets
+      - ./docker/assets:/opt/data/assets
 
   backend:
     image: "penpotapp/backend:latest"
-    container_name: penpot-backend
+    container_name: penpot_backend
     restart: always
-    networks:
-      - penpot
-    depends_on:
-      - postgres
-      - redis
-    volumes:
-      - penpot_assets:/opt/data/assets
+    networks: [ penpot ]
     env_file:
       - ./docker/.env
     environment:
@@ -46,49 +39,46 @@ services:
       PENPOT_ASSETS_STORAGE_BACKEND: assets-fs
       PENPOT_STORAGE_ASSETS_FS_DIRECTORY: /opt/data/assets
       PENPOT_TELEMETRY_ENABLED: false
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./docker/assets:/opt/data/assets
 
   exporter:
     image: "penpotapp/exporter:latest"
     container_name: penpot-exporter
-    networks:
-      - penpot
     restart: always
+    networks: [ penpot ]
     env_file:
       - ./docker/.env
 
   postgres:
     image: "postgres:15"
-    container_name: penpot-postgres
-    volumes:
-      - penpot_postgres_v15:/var/lib/postgresql/data
-    networks:
-      - penpot
+    container_name: penpot_postgres
     restart: always
+    networks: [ penpot ]
     stop_signal: SIGINT
     env_file:
       - ./docker/.env
+    volumes:
+      - ./docker/data:/var/lib/postgresql/data
 
   redis:
     image: redis:7
-    container_name: penpot-redis
-    networks:
-      - penpot
+    container_name: penpot_redis
     restart: always
+    networks: [ penpot ]
     env_file:
       - ./docker/.env
 
   # used as temporary SMTP server.
   mailcatch:
     image: sj26/mailcatcher:latest
-    container_name: penpot-mailcatch
+    container_name: penpot_mailcatch
     restart: always
+    networks: [ penpot ]
     expose:
       - '1025'
     ports:
       - "1080:1080"
-    networks:
-      - penpot
-
-volumes:
-  penpot_postgres_v15:
-  penpot_assets:
